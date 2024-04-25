@@ -1,0 +1,6 @@
+FROM node:20
+RUN mkdir /laundromat
+COPY ./laundromat-react /laundromat/laundromat-react
+WORKDIR /laundromat/laundromat-react
+RUN npm install
+CMD ["npm", "start"]

@@ -1,0 +1,6 @@
+FROM node:20
+RUN mkdir /laundromat
+COPY ./laundromat-backend /laundromat/laundromat-backend
+WORKDIR /laundromat/laundromat-backend
+RUN npm install
+CMD ["node", "app.js"]
