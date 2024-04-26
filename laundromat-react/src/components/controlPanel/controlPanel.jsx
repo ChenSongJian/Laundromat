@@ -32,7 +32,7 @@ const ControlPanel = ({ washingMachineInfo, onControlPanelUpdate, setRefundAmoun
       });
       if (response.ok) {
         const data = await response.json();
-        setRemainingAmount(data.remaining_value_cent);
+        setRemainingAmount(data.remainingValueCent);
         await onControlPanelUpdate();
       } else {
         console.error('Error inserting coin:', response.statusText);
@@ -49,7 +49,7 @@ const ControlPanel = ({ washingMachineInfo, onControlPanelUpdate, setRefundAmoun
       });
       if (response.ok) {
         const data = await response.json();
-        setRefundAmount(data.refund_value_cent);
+        setRefundAmount(data.refundValueCent);
         setRemainingAmount(0);
         await onControlPanelUpdate();
       } else {

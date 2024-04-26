@@ -1,22 +1,12 @@
 const { StatusCodes } = require("http-status-codes");
 const WashingMachineState = require('../enum/washingMachineState.enum.js');
-const WashingMachine = require('../models/washingMachine.model.js');
 const WashJobHistory = require("../models/washJobHistory.model.js");
-const { removeCurrentJobWashingMachine } = require('../services/washingMachine.service.js');
+const { 
+    removeCurrentJobWashingMachine, 
+    getWashingMachineByWashingMachineId 
+} = require('../services/washingMachine.service.js');
 const getWashingMachineStatistics = require('../services/washJobHistory.service.js');
 const { defaultCoinTypes, defaultWashTypes } = require('../setup/defaultData.js');
-
-
-async function getWashingMachineByWashingMachineId(washingMachineId, res) {
-    if (isNaN(washingMachineId)) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Washing machine id should be integer!' });
-    }
-    const washingMachine = await WashingMachine.findOne({ washingMachineId: washingMachineId });
-    if (!washingMachine) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: 'Washing machine not found!' });
-    }
-    return washingMachine;
-}
 
 const getByWashingMachineId = async(req, res) => {
     try {
@@ -49,8 +39,8 @@ const getStatistics = async(req, res) => {
         const lastResetTime = washingMachine.lastResetTime;
         const { totalEarningCent, totalDurationSecond } = await getWashingMachineStatistics(lastResetTime, jobCompleted);
         return res.status(StatusCodes.OK).json({
-            total_earning_cent: totalEarningCent, 
-            total_duration_second: totalDurationSecond
+            totalEarningCent: totalEarningCent, 
+            totalDurationSecond: totalDurationSecond
         });
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR);
@@ -82,6 +72,7 @@ const powerOffWashingMachine = async(req, res) => {
             return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Washing machine is already off!'});
         }
         var refundValueCent = 0
+        // if there is ongonig job then just update the state, else remove current wash job info too
         if (washingMachine.state === WashingMachineState.WashInProgress 
             || washingMachine.state === WashingMachineState.PendingContinue
         ) {
@@ -92,7 +83,7 @@ const powerOffWashingMachine = async(req, res) => {
             washingMachine.state = WashingMachineState.Off;
             removeCurrentJobWashingMachine(washingMachine);
         }
-        res.status(StatusCodes.OK).json({ message: 'Power off washing machine successfully!', refund_value_cent: refundValueCent});
+        res.status(StatusCodes.OK).json({ message: 'Power off washing machine successfully!', refundValueCent: refundValueCent});
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR);
         console.log(error);
@@ -106,6 +97,7 @@ const powerOnWashingMachine = async(req, res) => {
         if (washingMachine.state !== WashingMachineState.Off) {
             return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Washing machine is not off!'});
         }
+        // if there is ongoing job then go to pending continue state to let user continue or cancel the job 
         if (washingMachine.currentJobStartTime) {
             washingMachine.state = WashingMachineState.PendingContinue;
         } else {
@@ -143,11 +135,11 @@ const selectWashType = async(req, res) => {
         washingMachine.currentJobName = req.body.wash_type;
         washingMachine.currentJobTotalTimeSecond = currentJobTotalTimeSecond;
         washingMachine.state = WashingMachineState.WashTypeSelected;
-        washingMachine.currentInsertedValueCent = washingMachine.currentInsertedValueCent || 0;
+        washingMachine.currentInsertedValueCent = 0;
         washingMachine.currentJobPriceCent = currentJobPriceCent;
         await washingMachine.save();
         remainingValueCent = washingMachine.currentJobPriceCent - washingMachine.currentInsertedValueCent;
-        res.status(StatusCodes.OK).json({ message: 'Select wash type successfully!', remaining_value_cent: remainingValueCent});
+        res.status(StatusCodes.OK).json({ message: 'Select wash type successfully!', remainingValueCent: remainingValueCent});
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR);
         console.log(error);
@@ -172,7 +164,7 @@ const insertCoin = async(req, res) => {
             washingMachine.state = WashingMachineState.PendingStart;
         }
         await washingMachine.save();
-        res.status(StatusCodes.OK).json({ message: 'Insert coin successfully!', remaining_value_cent: remainingValueCent});
+        res.status(StatusCodes.OK).json({ message: 'Insert coin successfully!', remainingValueCent: remainingValueCent});
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR);
         console.log(error);
@@ -189,6 +181,7 @@ const cancelWash = async(req, res) => {
             return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Washing machine is not in wash type selected, pending start or pending continue state!'});
         }
         
+        // if cancel an ongoing job then add the job info to history for stats computation
         if (washingMachine.state === WashingMachineState.PendingContinue) {
             const washJobRecord = new WashJobHistory({
                 jobName:  washingMachine.currentJobName,
@@ -204,7 +197,7 @@ const cancelWash = async(req, res) => {
         refundValueCent = washingMachine.currentInsertedValueCent;
         washingMachine.state = WashingMachineState.Idle;
         await removeCurrentJobWashingMachine(washingMachine);
-        res.status(StatusCodes.OK).json({ message: 'Cancel wash successfully!', refund_value_cent: refundValueCent});
+        res.status(StatusCodes.OK).json({ message: 'Cancel wash successfully!', refundValueCent: refundValueCent});
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR);
         console.log(error);
@@ -228,7 +221,7 @@ const startWash = async(req, res) => {
         washingMachine.currentJobRemainingTimeSecond = washingMachine.currentJobTotalTimeSecond;
         washingMachine.currentJoblastProgressUpdateTime = new Date();
         await washingMachine.save();
-        res.status(StatusCodes.OK).json({ message: 'Start wash successfully!', refund_value_cent: refundValueCent});
+        res.status(StatusCodes.OK).json({ message: 'Start wash successfully!', refundValueCent: refundValueCent});
     } catch (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR);
         console.log(error);

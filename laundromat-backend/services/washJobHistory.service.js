@@ -1,5 +1,7 @@
 const JobHistory = require('../models/washJobHistory.model.js');
 
+
+// Compute total earning and duration after the last reset date
 async function getWashingMachineStatistics(lastResetTime, jobCompleted) {
     return new Promise((resolve, reject) => {
         var matchingConditions = {

@@ -42,8 +42,8 @@ const WashingMachineDisplay = (
       if (response.ok) {
         const data = await response.json();
         console.log(data);
-        setTotalDurationSecond(data.total_duration_second);
-        setTotalEarningCent(data.total_earning_cent);
+        setTotalDurationSecond(data.totalDurationSecond);
+        setTotalEarningCent(data.totalEarningCent);
         console.log(totalEarningCent);
         console.log(totalDurationSecond);
       } else {
@@ -68,7 +68,7 @@ const WashingMachineDisplay = (
       });
       if (response.ok) {
         const data = await response.json();
-        setRemainingAmount(data.remaining_value_cent);
+        setRemainingAmount(data.remainingValueCent);
         await onDisplayUpdate();
       } else {
         console.error('Error selecting wash type:', response.statusText);
@@ -85,7 +85,7 @@ const WashingMachineDisplay = (
       });
       if (response.ok) {
         const data = await response.json()
-        setRefundAmount(data.refund_value_cent);
+        setRefundAmount(data.refundValueCent);
         await onDisplayUpdate();
       } else {
         console.error('Error start wash:', response.statusText);
@@ -106,7 +106,7 @@ const WashingMachineDisplay = (
       });
       if (response.ok) {
         const data = await response.json();
-        setRefundAmount(data.refund_value_cent);
+        setRefundAmount(data.refundValueCent);
         await onDisplayUpdate();
       } else {
         console.error('Error cancel wash:', response.statusText);

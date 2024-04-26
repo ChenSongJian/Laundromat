@@ -13,7 +13,7 @@ To run the Washing Machine App on your machine, follow these steps:
 Refer to the [walk-thorugh](./demo/walk-through.md) for a visual walkthrough of the application's user interface and functionality.
 
 ## API documentation
-Import the [postman collection file](./API%20documentation.postman_collection.json) into your Postman to view the more detailed information about the APIs, alternatively, you may also refer to the [PDF version](./API%20documentation.pdf) of the API documentations
+Refer to the [postman api documentation](https://documenter.getpostman.com/view/11989182/2sA3Bt19WH) for more detailed information, you may also import the [postman collection file](./washine_machine_api.postman_collection.json) to send request to the backend server
 
 ## Features
 - Accept coins of 10 cents, 20 cents, 50 cents and 1 dollar.
